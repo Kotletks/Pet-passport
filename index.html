@@ -134,6 +134,28 @@
     -webkit-min-logical-width:100%;
     max-width:100%;
   }
+
+  /* Documents section */
+  .section-title{
+    font-size:15px; font-weight:600; color:var(--cover);
+    margin:24px 0 10px;
+  }
+  .doc-group{margin-bottom:16px;}
+  .doc-group-date{
+    font-size:12px; font-weight:600; color:var(--ink-soft);
+    margin:0 0 8px;
+  }
+  .doc-row{
+    display:flex; align-items:center; gap:12px;
+    padding:10px 0; border-bottom:1px solid var(--line);
+  }
+  .doc-thumb{
+    width:44px; height:44px; border-radius:8px; object-fit:cover;
+    background:var(--paper-alt); border:1px solid var(--line);
+    flex-shrink:0; cursor:pointer;
+  }
+  .doc-info{flex:1; min-width:0;}
+  .doc-name{font-weight:600; font-size:14px;}
 </style>
 </head>
 <body>
@@ -232,6 +254,24 @@
 
         <button class="primary" type="submit">Сохранить</button>
       </form>
+
+      <div class="section-title">Документы</div>
+      <div id="docs-list"></div>
+      <div id="docs-empty" class="empty hidden">Пока нет документов</div>
+      <button type="button" class="add-btn" id="show-add-doc-btn">Добавить документ</button>
+
+      <div class="form-card hidden" id="add-doc-card">
+        <div id="add-doc-msg"></div>
+        <form id="add-doc-form">
+          <label class="field-label" for="doc-photo">Фото документа</label>
+          <input type="file" id="doc-photo" accept="image/*" capture="environment" required>
+          <input type="text" id="doc-title" placeholder="Название, например «Анализ крови»" required>
+          <label class="field-label" for="doc-date">Дата</label>
+          <input type="date" id="doc-date">
+          <button class="primary" type="submit" id="add-doc-submit">Сохранить</button>
+          <div class="switch-link" id="cancel-add-doc-btn" style="margin-top:12px;">Отмена</div>
+        </form>
+      </div>
     </div>
   </div>
 
@@ -555,6 +595,12 @@
     document.getElementById("detail-neutered").value =
       pet.neutered === true ? "true" : pet.neutered === false ? "false" : "";
 
+    document.getElementById("add-doc-msg").innerHTML = "";
+    document.getElementById("add-doc-form").reset();
+    document.getElementById("add-doc-card").classList.add("hidden");
+    document.getElementById("show-add-doc-btn").classList.remove("hidden");
+    loadDocuments(pet.id);
+
     document.getElementById("app-screen").classList.add("hidden");
     document.getElementById("pet-screen").classList.remove("hidden");
   }
@@ -614,6 +660,235 @@
       loadPets();
     } catch(err){
       msg.innerHTML = `<div class="msg-error">Не получилось связаться с сервером</div>`;
+    }
+  });
+
+  /* ---------- Documents ---------- */
+
+  const DOCS_BUCKET = "pet-documents";
+
+  function compressImage(file, maxSize, quality){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Не удалось прочитать файл"));
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onerror = () => reject(new Error("Не удалось прочитать изображение"));
+        img.onload = () => {
+          let { width, height } = img;
+          if(width > height && width > maxSize){
+            height = Math.round(height * (maxSize / width));
+            width = maxSize;
+          } else if(height >= width && height > maxSize){
+            width = Math.round(width * (maxSize / height));
+            height = maxSize;
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob(blob => {
+            if(blob) resolve(blob); else reject(new Error("Не удалось сжать изображение"));
+          }, "image/jpeg", quality);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function randomId(){
+    if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }
+
+  function formatDocDate(dateStr){
+    const d = new Date(`${dateStr}T00:00:00`);
+    if(isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "long", year: "numeric" });
+  }
+
+  async function getSignedDocUrl(path){
+    try {
+      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/sign/${DOCS_BUCKET}/${path}`, {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ expiresIn: 3600 })
+      });
+      if(!res.ok) return null;
+      const data = await res.json();
+      return data.signedURL ? `${SUPABASE_URL}/storage/v1${data.signedURL}` : null;
+    } catch(err){
+      return null;
+    }
+  }
+
+  async function deleteDocument(doc){
+    if(!confirm("Удалить документ? Это действие нельзя отменить.")) return false;
+    try {
+      const delRes = await fetch(`${SUPABASE_URL}/rest/v1/documents?id=eq.${doc.id}`, {
+        method: "DELETE",
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${accessToken}` }
+      });
+      if(!delRes.ok){
+        alert("Не удалось удалить документ");
+        return false;
+      }
+      await fetch(`${SUPABASE_URL}/storage/v1/object/${DOCS_BUCKET}/${doc.file_url}`, {
+        method: "DELETE",
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${accessToken}` }
+      }).catch(() => {});
+      return true;
+    } catch(err){
+      alert("Не получилось связаться с сервером");
+      return false;
+    }
+  }
+
+  async function loadDocuments(petId){
+    const list = document.getElementById("docs-list");
+    const emptyMsg = document.getElementById("docs-empty");
+    list.innerHTML = "";
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/documents?pet_id=eq.${petId}&select=*&order=document_date.desc,created_at.desc`,
+        { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${accessToken}` } }
+      );
+      const docs = await res.json();
+      if(!Array.isArray(docs) || docs.length === 0){
+        emptyMsg.classList.remove("hidden");
+        return;
+      }
+      emptyMsg.classList.add("hidden");
+
+      const groups = new Map();
+      docs.forEach(doc => {
+        const key = doc.document_date || "";
+        if(!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(doc);
+      });
+
+      groups.forEach((docsInGroup, dateKey) => {
+        const groupEl = document.createElement("div");
+        groupEl.className = "doc-group";
+        const dateLabel = dateKey ? formatDocDate(dateKey) : "Без даты";
+        groupEl.innerHTML = `<div class="doc-group-date">${dateLabel}</div>`;
+
+        docsInGroup.forEach(doc => {
+          const row = document.createElement("div");
+          row.className = "doc-row";
+          row.innerHTML = `
+            <img class="doc-thumb" alt="">
+            <div class="doc-info">
+              <div class="doc-name">${doc.title || "Документ"}</div>
+            </div>
+            <div class="link-danger doc-delete-btn">Удалить</div>`;
+
+          const img = row.querySelector(".doc-thumb");
+          getSignedDocUrl(doc.file_url).then(url => { if(url) img.src = url; });
+          img.addEventListener("click", async () => {
+            const url = await getSignedDocUrl(doc.file_url);
+            if(url) window.open(url, "_blank");
+          });
+
+          row.querySelector(".doc-delete-btn").addEventListener("click", async () => {
+            const ok = await deleteDocument(doc);
+            if(ok) loadDocuments(petId);
+          });
+
+          groupEl.appendChild(row);
+        });
+
+        list.appendChild(groupEl);
+      });
+    } catch(err){
+      list.innerHTML = "";
+    }
+  }
+
+  document.getElementById("show-add-doc-btn").addEventListener("click", () => {
+    document.getElementById("add-doc-msg").innerHTML = "";
+    document.getElementById("doc-date").value = new Date().toISOString().slice(0, 10);
+    document.getElementById("add-doc-card").classList.remove("hidden");
+    document.getElementById("show-add-doc-btn").classList.add("hidden");
+  });
+  document.getElementById("cancel-add-doc-btn").addEventListener("click", () => {
+    document.getElementById("add-doc-form").reset();
+    document.getElementById("add-doc-card").classList.add("hidden");
+    document.getElementById("show-add-doc-btn").classList.remove("hidden");
+  });
+
+  document.getElementById("add-doc-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById("add-doc-msg");
+    msg.innerHTML = "";
+
+    const fileInput = document.getElementById("doc-photo");
+    const file = fileInput.files[0];
+    const title = document.getElementById("doc-title").value;
+    const document_date = document.getElementById("doc-date").value || new Date().toISOString().slice(0, 10);
+
+    if(!file){
+      msg.innerHTML = `<div class="msg-error">Выбери фото документа</div>`;
+      return;
+    }
+
+    const submitBtn = document.getElementById("add-doc-submit");
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Загрузка...";
+
+    let uploadPath = null;
+    try {
+      const blob = await compressImage(file, 1600, 0.8);
+      uploadPath = `${currentPetId}/${randomId()}.jpg`;
+
+      const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/${DOCS_BUCKET}/${uploadPath}`, {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "image/jpeg"
+        },
+        body: blob
+      });
+      if(!uploadRes.ok){
+        throw new Error("upload_failed");
+      }
+
+      const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/documents`, {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+          Prefer: "return=representation"
+        },
+        body: JSON.stringify({ pet_id: currentPetId, title, document_date, file_url: uploadPath })
+      });
+      if(!insertRes.ok){
+        // Загрузка файла прошла, а запись создать не удалось — удаляем файл,
+        // чтобы в хранилище не оставался "осиротевший" объект без записи в БД.
+        await fetch(`${SUPABASE_URL}/storage/v1/object/${DOCS_BUCKET}/${uploadPath}`, {
+          method: "DELETE",
+          headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${accessToken}` }
+        }).catch(() => {});
+        throw new Error("insert_failed");
+      }
+
+      document.getElementById("add-doc-form").reset();
+      document.getElementById("add-doc-card").classList.add("hidden");
+      document.getElementById("show-add-doc-btn").classList.remove("hidden");
+      loadDocuments(currentPetId);
+    } catch(err){
+      msg.innerHTML = `<div class="msg-error">Не удалось загрузить документ. Проверь соединение и попробуй ещё раз.</div>`;
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Сохранить";
     }
   });
 </script>
