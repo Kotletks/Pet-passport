@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Паспорт питомца</title>
+<style>
+  :root{
+    --cover:#1E3A32;
+    --paper:#EFE8D8;
+    --paper-alt:#E6DEC9;
+    --ink:#262420;
+    --ink-soft:#5B5648;
+    --stamp:#A83B27;
+    --sage:#6F7F5E;
+    --line:#C9BFA4;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:#DCD5C2;
+    font-family:-apple-system, system-ui, sans-serif;
+    color:var(--ink);
+    display:flex;
+    justify-content:center;
+  }
+  #app{
+    width:100%;
+    max-width:420px;
+    min-height:100vh;
+    background:var(--paper);
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* Auth screen */
+  .auth-screen{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding:32px 28px;
+  }
+  .title{font-size:26px; font-weight:600; color:var(--cover); margin-bottom:6px;}
+  .subtitle{font-size:13px; color:var(--ink-soft); margin-bottom:24px; line-height:1.5;}
+  input, select{
+    width:100%;
+    padding:12px 14px;
+    margin-bottom:12px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:#fff;
+    font-size:14px;
+    color:var(--ink);
+    font-family:inherit;
+  }
+  button.primary{
+    width:100%;
+    padding:13px;
+    background:var(--cover);
+    color:var(--paper);
+    border:none;
+    border-radius:8px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .switch-link{
+    text-align:center;
+    margin-top:16px;
+    font-size:13px;
+    color:var(--ink-soft);
+    text-decoration:underline;
+    cursor:pointer;
+  }
+  .msg-error{
+    background:#FBEAE6; color:var(--stamp);
+    padding:10px 12px; border-radius:8px; font-size:12px; margin-bottom:14px;
+  }
+  .msg-ok{
+    background:#EAF0E5; color:var(--sage);
+    padding:10px 12px; border-radius:8px; font-size:12px; margin-bottom:14px;
+  }
+
+  /* App header */
+  .app-header{
+    padding:24px 20px 16px;
+    display:flex; justify-content:space-between; align-items:center;
+    border-bottom:1px solid var(--line);
+  }
+  .app-header h1{font-size:22px; font-weight:600; color:var(--cover); margin:0;}
+  .signout{font-size:12px; color:var(--ink-soft); text-decoration:underline; cursor:pointer;}
+
+  .content{padding:8px 20px 24px;}
+  .pet-row{
+    display:flex; align-items:center; gap:14px;
+    padding:14px 0; border-bottom:1px solid var(--line);
+  }
+  .avatar{
+    width:48px; height:48px; border-radius:50%;
+    background:var(--paper-alt); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    font-size:18px; font-weight:600; color:var(--cover); flex-shrink:0;
+  }
+  .pet-name{font-weight:600; font-size:15px;}
+  .pet-meta{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+  .add-btn{
+    margin-top:18px; padding:13px;
+    border:1px dashed var(--line); border-radius:8px;
+    text-align:center; font-size:13px; color:var(--ink-soft);
+    cursor:pointer; background:transparent; width:100%;
+  }
+  .form-card{
+    margin-top:16px; padding:16px;
+    background:var(--paper-alt); border-radius:10px; border:1px solid var(--line);
+  }
+  .empty{text-align:center; color:var(--ink-soft); font-size:13px; padding:40px 0 20px;}
+  .hidden{display:none;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- AUTH SCREEN -->
+  <div id="auth-screen" class="auth-screen">
+    <div class="title">Паспорт питомца</div>
+    <div class="subtitle" id="auth-subtitle">Войди, чтобы увидеть своих питомцев.</div>
+    <div id="auth-msg"></div>
+    <form id="auth-form">
+      <input type="email" id="auth-email" placeholder="Почта" required>
+      <input type="password" id="auth-password" placeholder="Пароль" required minlength="6">
+      <button class="primary" type="submit" id="auth-submit">Войти</button>
+    </form>
+    <div class="switch-link" id="auth-switch">Ещё нет аккаунта? Зарегистрироваться</div>
+  </div>
+
+  <!-- APP SCREEN -->
+  <div id="app-screen" class="hidden">
+    <div class="app-header">
+      <h1>Мои питомцы</h1>
+      <div class="signout" id="signout-btn">Выйти</div>
+    </div>
+    <div class="content">
+      <div id="pets-list"></div>
+      <div id="empty-msg" class="empty hidden">Питомцев пока нет — добавь первого.</div>
+      <button class="add-btn" id="show-add-btn">Добавить питомца</button>
+
+      <div class="form-card hidden" id="add-form-card">
+        <div id="add-msg"></div>
+        <form id="add-pet-form">
+          <input type="text" id="pet-name" placeholder="Имя" required>
+          <select id="pet-species">
+            <option value="cat">Кошка</option>
+            <option value="dog">Собака</option>
+          </select>
+          <input type="text" id="pet-breed" placeholder="Порода (необязательно)">
+          <input type="date" id="pet-birth">
+          <button class="primary" type="submit">Сохранить</button>
+          <div class="switch-link" id="cancel-add-btn" style="margin-top:12px;">Отмена</div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const SUPABASE_URL = "https://wktylbnggdfepixtkrnn.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_WhkqHDpNcoazgPK9U7lqdg_AaLHvFya";
+
+  let accessToken = null;
+  let mode = "signin";
+
+  function calcAge(birthDate){
+    if(!birthDate) return "";
+    const b = new Date(birthDate);
+    const now = new Date();
+    let years = now.getFullYear() - b.getFullYear();
+    let months = now.getMonth() - b.getMonth();
+    if(now.getDate() < b.getDate()) months -= 1;
+    if(months < 0){ years -= 1; months += 12; }
+    return years > 0 ? `${years} г. ${months} мес.` : `${months} мес.`;
+  }
+
+  const authForm = document.getElementById("auth-form");
+  const authMsg = document.getElementById("auth-msg");
+  const authSubmit = document.getElementById("auth-submit");
+  const authSubtitle = document.getElementById("auth-subtitle");
+  const authSwitch = document.getElementById("auth-switch");
+
+  authSwitch.addEventListener("click", () => {
+    mode = mode === "signin" ? "signup" : "signin";
+    authSubmit.textContent = mode === "signin" ? "Войти" : "Зарегистрироваться";
+    authSubtitle.textContent = mode === "signin"
+      ? "Войди, чтобы увидеть своих питомцев."
+      : "Создай аккаунт — это займёт минуту.";
+    authSwitch.textContent = mode === "signin"
+      ? "Ещё нет аккаунта? Зарегистрироваться"
+      : "Уже есть аккаунт? Войти";
+    authMsg.innerHTML = "";
+  });
+
+  authForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    authMsg.innerHTML = "";
+    authSubmit.disabled = true;
+    authSubmit.textContent = "Секунду...";
+
+    const email = document.getElementById("auth-email").value;
+    const password = document.getElementById("auth-password").value;
+    const endpoint = mode === "signup"
+      ? `${SUPABASE_URL}/auth/v1/signup`
+      : `${SUPABASE_URL}/auth/v1/token?grant_type=password`;
+
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+
+      if(!res.ok){
+        authMsg.innerHTML = `<div class="msg-error">${data.error_description || data.msg || data.error || "Что-то пошло не так"}</div>`;
+      } else if(mode === "signup" && !data.access_token){
+        authMsg.innerHTML = `<div class="msg-ok">Готово! Проверь почту и подтверди адрес, потом войди через «Вход».</div>`;
+        mode = "signin";
+        authSubmit.textContent = "Войти";
+        authSwitch.textContent = "Ещё нет аккаунта? Зарегистрироваться";
+      } else if(data.access_token){
+        accessToken = data.access_token;
+        showApp();
+        loadPets();
+      }
+    } catch(err){
+      authMsg.innerHTML = `<div class="msg-error">Не получилось связаться с сервером. Проверь соединение.</div>`;
+    }
+    authSubmit.disabled = false;
+    if(mode === "signin") authSubmit.textContent = "Войти"; else authSubmit.textContent = "Зарегистрироваться";
+  });
+
+  function showApp(){
+    document.getElementById("auth-screen").classList.add("hidden");
+    document.getElementById("app-screen").classList.remove("hidden");
+  }
+
+  document.getElementById("signout-btn").addEventListener("click", () => {
+    accessToken = null;
+    document.getElementById("app-screen").classList.add("hidden");
+    document.getElementById("auth-screen").classList.remove("hidden");
+    document.getElementById("auth-email").value = "";
+    document.getElementById("auth-password").value = "";
+  });
+
+  async function loadPets(){
+    const list = document.getElementById("pets-list");
+    const emptyMsg = document.getElementById("empty-msg");
+    list.innerHTML = "";
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/pets?select=*&order=created_at.asc`, {
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${accessToken}` }
+      });
+      const pets = await res.json();
+      if(!Array.isArray(pets) || pets.length === 0){
+        emptyMsg.classList.remove("hidden");
+        return;
+      }
+      emptyMsg.classList.add("hidden");
+      pets.forEach(pet => {
+        const row = document.createElement("div");
+        row.className = "pet-row";
+        const speciesLabel = pet.species === "cat" ? "Кошка" : "Собака";
+        const age = pet.birth_date ? ` · ${calcAge(pet.birth_date)}` : "";
+        row.innerHTML = `
+          <div class="avatar">${(pet.name || "?")[0].toUpperCase()}</div>
+          <div>
+            <div class="pet-name">${pet.name}</div>
+            <div class="pet-meta">${speciesLabel}${age}</div>
+          </div>`;
+        list.appendChild(row);
+      });
+    } catch(err){
+      list.innerHTML = "";
+    }
+  }
+
+  document.getElementById("show-add-btn").addEventListener("click", () => {
+    document.getElementById("add-form-card").classList.remove("hidden");
+    document.getElementById("show-add-btn").classList.add("hidden");
+  });
+  document.getElementById("cancel-add-btn").addEventListener("click", () => {
+    document.getElementById("add-form-card").classList.add("hidden");
+    document.getElementById("show-add-btn").classList.remove("hidden");
+  });
+
+  document.getElementById("add-pet-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const addMsg = document.getElementById("add-msg");
+    addMsg.innerHTML = "";
+    const name = document.getElementById("pet-name").value;
+    const species = document.getElementById("pet-species").value;
+    const breed = document.getElementById("pet-breed").value || null;
+    const birth_date = document.getElementById("pet-birth").value || null;
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/pets`, {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+          Prefer: "return=representation"
+        },
+        body: JSON.stringify({ name, species, breed, birth_date })
+      });
+      const data = await res.json();
+      if(!res.ok){
+        addMsg.innerHTML = `<div class="msg-error">${data.message || "Не удалось сохранить питомца"}</div>`;
+        return;
+      }
+      document.getElementById("add-pet-form").reset();
+      document.getElementById("add-form-card").classList.add("hidden");
+      document.getElementById("show-add-btn").classList.remove("hidden");
+      loadPets();
+    } catch(err){
+      addMsg.innerHTML = `<div class="msg-error">Не получилось связаться с сервером</div>`;
+    }
+  });
+</script>
+</body>
+</html>
