@@ -95,6 +95,7 @@
   .pet-row{
     display:flex; align-items:center; gap:14px;
     padding:14px 0; border-bottom:1px solid var(--line);
+    cursor:pointer;
   }
   .avatar{
     width:48px; height:48px; border-radius:50%;
@@ -102,8 +103,13 @@
     display:flex; align-items:center; justify-content:center;
     font-size:18px; font-weight:600; color:var(--cover); flex-shrink:0;
   }
+  .pet-info{flex:1; min-width:0;}
   .pet-name{font-weight:600; font-size:15px;}
   .pet-meta{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+  .link-danger{
+    font-size:12px; color:var(--stamp);
+    text-decoration:underline; cursor:pointer; flex-shrink:0;
+  }
   .add-btn{
     margin-top:18px; padding:13px;
     border:1px dashed var(--line); border-radius:8px;
@@ -168,10 +174,64 @@
           <select id="pet-breed"></select>
           <label class="field-label" for="pet-birth">Дата рождения</label>
           <input type="date" id="pet-birth">
+          <label class="field-label" for="pet-sex">Пол</label>
+          <select id="pet-sex">
+            <option value="">Не указан</option>
+            <option value="male">Мальчик</option>
+            <option value="female">Девочка</option>
+          </select>
+          <label class="field-label" for="pet-neutered">Стерилизация</label>
+          <select id="pet-neutered">
+            <option value="">Не указано</option>
+            <option value="false">Не стерилизован(а)</option>
+            <option value="true">Стерилизован(а)</option>
+          </select>
           <button class="primary" type="submit">Сохранить</button>
           <div class="switch-link" id="cancel-add-btn" style="margin-top:12px;">Отмена</div>
         </form>
       </div>
+    </div>
+  </div>
+
+  <!-- PET PASSPORT SCREEN -->
+  <div id="pet-screen" class="hidden">
+    <div class="app-header">
+      <div class="switch-link" id="back-btn" style="margin:0;">← Назад</div>
+      <h1 id="detail-title" style="font-size:16px;">Паспорт</h1>
+      <div class="link-danger" id="delete-pet-btn">Удалить</div>
+    </div>
+    <div class="content">
+      <div id="pet-detail-msg"></div>
+      <form id="pet-detail-form">
+        <input type="text" id="detail-name" placeholder="Имя" required>
+
+        <select id="detail-species">
+          <option value="cat">Кошка</option>
+          <option value="dog">Собака</option>
+        </select>
+
+        <select id="detail-breed"></select>
+
+        <label class="field-label" for="detail-birth">Дата рождения</label>
+        <input type="date" id="detail-birth">
+        <div class="pet-meta" id="detail-age" style="margin:-4px 0 12px;"></div>
+
+        <label class="field-label" for="detail-sex">Пол</label>
+        <select id="detail-sex">
+          <option value="">Не указан</option>
+          <option value="male">Мальчик</option>
+          <option value="female">Девочка</option>
+        </select>
+
+        <label class="field-label" for="detail-neutered">Стерилизация</label>
+        <select id="detail-neutered">
+          <option value="">Не указано</option>
+          <option value="false">Не стерилизован(а)</option>
+          <option value="true">Стерилизован(а)</option>
+        </select>
+
+        <button class="primary" type="submit">Сохранить</button>
+      </form>
     </div>
   </div>
 
@@ -187,22 +247,53 @@
   const BREEDS_BY_SPECIES = {
     cat: [
       "Метис / не знаю породу",
+      "Абиссинская",
+      "Американский керл",
+      "Балийская",
+      "Бенгальская",
+      "Бирманская",
+      "Бомбейская",
+      "Британская длинношёрстная",
       "Британская короткошёрстная",
+      "Бурманская",
+      "Бурмилла",
+      "Гавана браун",
+      "Девон-рекс",
+      "Донской сфинкс",
+      "Египетская мау",
+      "Карельский бобтейл",
+      "Корат",
+      "Корниш-рекс",
+      "Курильский бобтейл",
+      "Лаперм",
+      "Манчкин",
+      "Мейн-кун",
+      "Мэнкс",
+      "Невская маскарадная",
+      "Норвежская лесная",
+      "Ориентальная",
+      "Оцикет",
+      "Персидская",
+      "Петерболд",
+      "Пикси-боб",
+      "Русская голубая",
+      "Рэгдолл",
+      "Селкирк-рекс",
+      "Сиамская",
+      "Сибирская",
+      "Сингапура",
+      "Сомали",
+      "Сфинкс",
+      "Тайская",
+      "Тонкинская",
+      "Турецкая ангора",
+      "Турецкий ван",
+      "Хайленд-фолд",
+      "Чаузи",
       "Шотландская вислоухая",
       "Шотландская прямоухая",
-      "Мейн-кун",
-      "Сибирская",
-      "Русская голубая",
-      "Сфинкс",
-      "Персидская",
-      "Бенгальская",
-      "Абиссинская",
-      "Сиамская",
-      "Тайская",
-      "Рэгдолл",
-      "Курильский бобтейл",
-      "Невская маскарадная",
       "Экзотическая короткошёрстная",
+      "Японский бобтейл",
       "Другая"
     ],
     dog: [
@@ -229,16 +320,31 @@
     ]
   };
 
-  function renderBreedOptions(species){
-    const breedSelect = document.getElementById("pet-breed");
+  function renderBreedOptions(species, selectId){
+    const breedSelect = document.getElementById(selectId || "pet-breed");
     const breeds = BREEDS_BY_SPECIES[species] || BREEDS_BY_SPECIES.cat;
     breedSelect.innerHTML = breeds.map(b => `<option value="${b}">${b}</option>`).join("");
   }
 
+  function setSelectValueSafe(select, value){
+    if(value === null || value === undefined || value === ""){
+      select.selectedIndex = 0;
+      return;
+    }
+    const exists = Array.from(select.options).some(o => o.value === value);
+    if(!exists){
+      const opt = document.createElement("option");
+      opt.value = value;
+      opt.textContent = value;
+      select.insertBefore(opt, select.firstChild);
+    }
+    select.value = value;
+  }
+
   document.getElementById("pet-species").addEventListener("change", (e) => {
-    renderBreedOptions(e.target.value);
+    renderBreedOptions(e.target.value, "pet-breed");
   });
-  renderBreedOptions(document.getElementById("pet-species").value);
+  renderBreedOptions(document.getElementById("pet-species").value, "pet-breed");
 
   function calcAge(birthDate){
     if(!birthDate) return "";
@@ -342,10 +448,17 @@
         const age = pet.birth_date ? ` · ${calcAge(pet.birth_date)}` : "";
         row.innerHTML = `
           <div class="avatar">${(pet.name || "?")[0].toUpperCase()}</div>
-          <div>
+          <div class="pet-info">
             <div class="pet-name">${pet.name}</div>
             <div class="pet-meta">${speciesLabel}${age}</div>
-          </div>`;
+          </div>
+          <div class="link-danger pet-delete-btn">Удалить</div>`;
+        row.addEventListener("click", () => openPetDetail(pet));
+        row.querySelector(".pet-delete-btn").addEventListener("click", async (ev) => {
+          ev.stopPropagation();
+          const ok = await deletePet(pet.id);
+          if(ok) loadPets();
+        });
         list.appendChild(row);
       });
     } catch(err){
@@ -370,6 +483,10 @@
     const species = document.getElementById("pet-species").value;
     const breed = document.getElementById("pet-breed").value || null;
     const birth_date = document.getElementById("pet-birth").value || null;
+    const sexVal = document.getElementById("pet-sex").value;
+    const sex = sexVal || null;
+    const neuteredVal = document.getElementById("pet-neutered").value;
+    const neutered = neuteredVal === "" ? null : neuteredVal === "true";
 
     try {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/pets`, {
@@ -380,7 +497,7 @@
           "Content-Type": "application/json",
           Prefer: "return=representation"
         },
-        body: JSON.stringify({ name, species, breed, birth_date })
+        body: JSON.stringify({ name, species, breed, birth_date, sex, neutered })
       });
       const data = await res.json();
       if(!res.ok){
@@ -388,12 +505,115 @@
         return;
       }
       document.getElementById("add-pet-form").reset();
-      renderBreedOptions(document.getElementById("pet-species").value);
+      renderBreedOptions(document.getElementById("pet-species").value, "pet-breed");
       document.getElementById("add-form-card").classList.add("hidden");
       document.getElementById("show-add-btn").classList.remove("hidden");
       loadPets();
     } catch(err){
       addMsg.innerHTML = `<div class="msg-error">Не получилось связаться с сервером</div>`;
+    }
+  });
+
+  /* ---------- Pet passport screen ---------- */
+
+  let currentPetId = null;
+
+  async function deletePet(id){
+    if(!confirm("Удалить питомца? Это действие нельзя отменить.")) return false;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/pets?id=eq.${id}`, {
+        method: "DELETE",
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${accessToken}` }
+      });
+      if(!res.ok){
+        alert("Не удалось удалить питомца");
+        return false;
+      }
+      return true;
+    } catch(err){
+      alert("Не получилось связаться с сервером");
+      return false;
+    }
+  }
+
+  function updateDetailAge(){
+    const birth = document.getElementById("detail-birth").value;
+    document.getElementById("detail-age").textContent = birth ? `Возраст: ${calcAge(birth)}` : "";
+  }
+
+  function openPetDetail(pet){
+    currentPetId = pet.id;
+    document.getElementById("pet-detail-msg").innerHTML = "";
+    document.getElementById("detail-title").textContent = pet.name || "Паспорт";
+    document.getElementById("detail-name").value = pet.name || "";
+    document.getElementById("detail-species").value = pet.species === "dog" ? "dog" : "cat";
+    renderBreedOptions(document.getElementById("detail-species").value, "detail-breed");
+    setSelectValueSafe(document.getElementById("detail-breed"), pet.breed);
+    document.getElementById("detail-birth").value = pet.birth_date || "";
+    updateDetailAge();
+    document.getElementById("detail-sex").value = pet.sex === "male" || pet.sex === "female" ? pet.sex : "";
+    document.getElementById("detail-neutered").value =
+      pet.neutered === true ? "true" : pet.neutered === false ? "false" : "";
+
+    document.getElementById("app-screen").classList.add("hidden");
+    document.getElementById("pet-screen").classList.remove("hidden");
+  }
+
+  function closePetDetail(){
+    document.getElementById("pet-screen").classList.add("hidden");
+    document.getElementById("app-screen").classList.remove("hidden");
+  }
+
+  document.getElementById("back-btn").addEventListener("click", closePetDetail);
+
+  document.getElementById("detail-species").addEventListener("change", (e) => {
+    renderBreedOptions(e.target.value, "detail-breed");
+  });
+
+  document.getElementById("detail-birth").addEventListener("change", updateDetailAge);
+
+  document.getElementById("delete-pet-btn").addEventListener("click", async () => {
+    const ok = await deletePet(currentPetId);
+    if(ok){
+      closePetDetail();
+      loadPets();
+    }
+  });
+
+  document.getElementById("pet-detail-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById("pet-detail-msg");
+    msg.innerHTML = "";
+    const name = document.getElementById("detail-name").value;
+    const species = document.getElementById("detail-species").value;
+    const breed = document.getElementById("detail-breed").value || null;
+    const birth_date = document.getElementById("detail-birth").value || null;
+    const sexVal = document.getElementById("detail-sex").value;
+    const sex = sexVal || null;
+    const neuteredVal = document.getElementById("detail-neutered").value;
+    const neutered = neuteredVal === "" ? null : neuteredVal === "true";
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/pets?id=eq.${currentPetId}`, {
+        method: "PATCH",
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+          Prefer: "return=representation"
+        },
+        body: JSON.stringify({ name, species, breed, birth_date, sex, neutered })
+      });
+      const data = await res.json();
+      if(!res.ok){
+        msg.innerHTML = `<div class="msg-error">${data.message || "Не удалось сохранить изменения"}</div>`;
+        return;
+      }
+      document.getElementById("detail-title").textContent = name || "Паспорт";
+      msg.innerHTML = `<div class="msg-ok">Сохранено</div>`;
+      loadPets();
+    } catch(err){
+      msg.innerHTML = `<div class="msg-error">Не получилось связаться с сервером</div>`;
     }
   });
 </script>
