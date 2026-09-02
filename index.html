@@ -4,22 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Паспорт питомца</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --cover:#1E3A32;
-    --paper:#EFE8D8;
-    --paper-alt:#E6DEC9;
-    --ink:#262420;
-    --ink-soft:#5B5648;
-    --stamp:#A83B27;
-    --sage:#6F7F5E;
-    --line:#C9BFA4;
+    --bg:#FBF8F4;
+    --card-bg:#FFFFFF;
+    --accent:#4A2F26;
+    --accent-soft:#F0E8E2;
+    --ink:#2A211C;
+    --ink-soft:#A99C90;
+    --line:#EFE8E1;
   }
   *{box-sizing:border-box;}
   body{
     margin:0;
-    background:#DCD5C2;
-    font-family:-apple-system, system-ui, sans-serif;
+    background:var(--line);
+    font-family:'Inter', -apple-system, system-ui, sans-serif;
     color:var(--ink);
     display:flex;
     justify-content:center;
@@ -28,9 +30,14 @@
     width:100%;
     max-width:420px;
     min-height:100vh;
-    background:var(--paper);
+    background:var(--bg);
     display:flex;
     flex-direction:column;
+    position:relative;
+  }
+
+  h1, .title, .card-value, .pet-name, .doc-name, .tab-btn span{
+    font-family:'Outfit', 'Inter', -apple-system, system-ui, sans-serif;
   }
 
   /* Auth screen */
@@ -41,7 +48,7 @@
     justify-content:center;
     padding:32px 28px;
   }
-  .title{font-size:26px; font-weight:600; color:var(--cover); margin-bottom:6px;}
+  .title{font-size:26px; font-weight:700; color:var(--accent); margin-bottom:6px;}
   .subtitle{font-size:13px; color:var(--ink-soft); margin-bottom:24px; line-height:1.5;}
   input, select{
     width:100%;
@@ -49,7 +56,7 @@
     margin-bottom:12px;
     border:1px solid var(--line);
     border-radius:8px;
-    background:#fff;
+    background:var(--card-bg);
     font-size:14px;
     color:var(--ink);
     font-family:inherit;
@@ -57,8 +64,8 @@
   button.primary{
     width:100%;
     padding:13px;
-    background:var(--cover);
-    color:var(--paper);
+    background:var(--accent);
+    color:var(--card-bg);
     border:none;
     border-radius:8px;
     font-size:14px;
@@ -74,11 +81,11 @@
     cursor:pointer;
   }
   .msg-error{
-    background:#FBEAE6; color:var(--stamp);
+    background:var(--accent-soft); color:var(--accent);
     padding:10px 12px; border-radius:8px; font-size:12px; margin-bottom:14px;
   }
   .msg-ok{
-    background:#EAF0E5; color:var(--sage);
+    background:var(--accent-soft); color:var(--ink);
     padding:10px 12px; border-radius:8px; font-size:12px; margin-bottom:14px;
   }
 
@@ -86,39 +93,54 @@
   .app-header{
     padding:24px 20px 16px;
     display:flex; justify-content:space-between; align-items:center;
+    gap:12px;
     border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg, var(--accent-soft), var(--bg));
   }
-  .app-header h1{font-size:22px; font-weight:600; color:var(--cover); margin:0;}
-  .signout{font-size:12px; color:var(--ink-soft); text-decoration:underline; cursor:pointer;}
+  .app-header h1{font-size:22px; font-weight:700; color:var(--accent); margin:0;}
+  .signout{font-size:12px; color:var(--ink-soft); text-decoration:underline; cursor:pointer; flex-shrink:0;}
 
   .content{padding:8px 20px 24px;}
-  .pet-row{
+
+  /* Shared card component: white tile, soft shadow, no left stripe */
+  .card{
     display:flex; align-items:center; gap:14px;
-    padding:14px 0; border-bottom:1px solid var(--line);
+    background:var(--card-bg);
+    border-radius:16px;
+    padding:14px 16px;
+    margin-bottom:10px;
+    box-shadow:0 3px 10px -4px rgba(0,0,0,.06);
     cursor:pointer;
   }
+  .card-label{font-size:10px; color:var(--ink-soft);}
+  .card-value{font-size:14px; font-weight:700; color:var(--ink); margin-top:2px;}
+
   .avatar{
     width:48px; height:48px; border-radius:50%;
-    background:var(--paper-alt); border:1px solid var(--line);
+    background:var(--accent-soft); color:var(--accent);
     display:flex; align-items:center; justify-content:center;
-    font-size:18px; font-weight:600; color:var(--cover); flex-shrink:0;
+    flex-shrink:0;
   }
+  .avatar svg{width:24px; height:24px;}
+  .avatar-sm{width:32px; height:32px;}
+  .avatar-sm svg{width:18px; height:18px;}
+
   .pet-info{flex:1; min-width:0;}
-  .pet-name{font-weight:600; font-size:15px;}
   .pet-meta{font-size:12px; color:var(--ink-soft); margin-top:2px;}
   .link-danger{
-    font-size:12px; color:var(--stamp);
+    font-size:12px; color:var(--accent);
     text-decoration:underline; cursor:pointer; flex-shrink:0;
   }
   .add-btn{
-    margin-top:18px; padding:13px;
-    border:1px dashed var(--line); border-radius:8px;
+    margin-top:8px; padding:13px;
+    border:1px dashed var(--line); border-radius:12px;
     text-align:center; font-size:13px; color:var(--ink-soft);
     cursor:pointer; background:transparent; width:100%;
   }
   .form-card{
     margin-top:16px; padding:16px;
-    background:var(--paper-alt); border-radius:10px; border:1px solid var(--line);
+    background:var(--card-bg); border-radius:16px;
+    box-shadow:0 3px 10px -4px rgba(0,0,0,.06);
   }
   .empty{text-align:center; color:var(--ink-soft); font-size:13px; padding:40px 0 20px;}
   .hidden{display:none;}
@@ -129,33 +151,49 @@
     color:var(--ink-soft);
     margin:0 0 6px;
   }
-  /* iOS Safari fix: input[type=date] ignores width:100% and can overflow its card */
+  /* iOS Safari fix: input[type=date] ignores width:100% and can overflow its card. Global selector — applies to every date field in the app. */
   input[type="date"]{
     -webkit-min-logical-width:100%;
     max-width:100%;
   }
 
-  /* Documents section */
-  .section-title{
-    font-size:15px; font-weight:600; color:var(--cover);
-    margin:24px 0 10px;
-  }
+  /* Documents */
   .doc-group{margin-bottom:16px;}
   .doc-group-date{
     font-size:12px; font-weight:600; color:var(--ink-soft);
     margin:0 0 8px;
   }
-  .doc-row{
-    display:flex; align-items:center; gap:12px;
-    padding:10px 0; border-bottom:1px solid var(--line);
-  }
+  .doc-row{cursor:default;}
+  .doc-row .doc-info{flex:1; min-width:0;}
   .doc-thumb{
-    width:44px; height:44px; border-radius:8px; object-fit:cover;
-    background:var(--paper-alt); border:1px solid var(--line);
-    flex-shrink:0; cursor:pointer;
+    width:44px; height:44px; border-radius:12px; object-fit:cover;
+    background:var(--accent-soft);
+    flex-shrink:0;
   }
-  .doc-info{flex:1; min-width:0;}
-  .doc-name{font-weight:600; font-size:14px;}
+
+  /* Bottom tab bar (pet passport screen) */
+  #pet-screen .content{padding-bottom:96px;}
+  .tab-panel.hidden{display:none;}
+  .tab-bar{
+    position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+    width:100%; max-width:420px;
+    display:flex;
+    background:var(--card-bg);
+    border-top:1px solid var(--line);
+    padding:8px 4px calc(8px + env(safe-area-inset-bottom, 0px));
+    box-shadow:0 -3px 10px -4px rgba(0,0,0,.06);
+    z-index:10;
+  }
+  .tab-btn{
+    flex:1;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    background:none; border:none; padding:6px 2px;
+    cursor:pointer; color:var(--ink-soft);
+  }
+  .tab-btn svg{width:22px; height:22px; stroke:currentColor;}
+  .tab-btn span{font-size:10px; font-weight:600;}
+  .tab-btn.active{color:var(--accent);}
+  .tab-btn:disabled{opacity:.4; cursor:default;}
 </style>
 </head>
 <body>
@@ -219,60 +257,100 @@
   <div id="pet-screen" class="hidden">
     <div class="app-header">
       <div class="switch-link" id="back-btn" style="margin:0;">← Назад</div>
-      <h1 id="detail-title" style="font-size:16px;">Паспорт</h1>
+      <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+        <div class="avatar avatar-sm" id="detail-avatar"></div>
+        <h1 id="detail-title" style="font-size:16px;">Паспорт</h1>
+      </div>
       <div class="link-danger" id="delete-pet-btn">Удалить</div>
     </div>
     <div class="content">
-      <div id="pet-detail-msg"></div>
-      <form id="pet-detail-form">
-        <input type="text" id="detail-name" placeholder="Имя" required>
 
-        <select id="detail-species">
-          <option value="cat">Кошка</option>
-          <option value="dog">Собака</option>
-        </select>
+      <!-- TAB: PASSPORT -->
+      <div id="tab-passport" class="tab-panel">
+        <div id="pet-detail-msg"></div>
+        <form id="pet-detail-form">
+          <input type="text" id="detail-name" placeholder="Имя" required>
 
-        <select id="detail-breed"></select>
+          <select id="detail-species">
+            <option value="cat">Кошка</option>
+            <option value="dog">Собака</option>
+          </select>
 
-        <label class="field-label" for="detail-birth">Дата рождения</label>
-        <input type="date" id="detail-birth">
-        <div class="pet-meta" id="detail-age" style="margin:-4px 0 12px;"></div>
+          <select id="detail-breed"></select>
 
-        <label class="field-label" for="detail-sex">Пол</label>
-        <select id="detail-sex">
-          <option value="">Не указан</option>
-          <option value="male">Мальчик</option>
-          <option value="female">Девочка</option>
-        </select>
+          <label class="field-label" for="detail-birth">Дата рождения</label>
+          <input type="date" id="detail-birth">
+          <div class="pet-meta" id="detail-age" style="margin:-4px 0 12px;"></div>
 
-        <label class="field-label" for="detail-neutered">Стерилизация</label>
-        <select id="detail-neutered">
-          <option value="">Не указано</option>
-          <option value="false">Не стерилизован(а)</option>
-          <option value="true">Стерилизован(а)</option>
-        </select>
+          <label class="field-label" for="detail-sex">Пол</label>
+          <select id="detail-sex">
+            <option value="">Не указан</option>
+            <option value="male">Мальчик</option>
+            <option value="female">Девочка</option>
+          </select>
 
-        <button class="primary" type="submit">Сохранить</button>
-      </form>
+          <label class="field-label" for="detail-neutered">Стерилизация</label>
+          <select id="detail-neutered">
+            <option value="">Не указано</option>
+            <option value="false">Не стерилизован(а)</option>
+            <option value="true">Стерилизован(а)</option>
+          </select>
 
-      <div class="section-title">Документы</div>
-      <div id="docs-list"></div>
-      <div id="docs-empty" class="empty hidden">Пока нет документов</div>
-      <button type="button" class="add-btn" id="show-add-doc-btn">Добавить документ</button>
-
-      <div class="form-card hidden" id="add-doc-card">
-        <div id="add-doc-msg"></div>
-        <form id="add-doc-form">
-          <label class="field-label" for="doc-photo">Фото документа</label>
-          <input type="file" id="doc-photo" accept="image/*" capture="environment" required>
-          <input type="text" id="doc-title" placeholder="Название, например «Анализ крови»" required>
-          <label class="field-label" for="doc-date">Дата</label>
-          <input type="date" id="doc-date">
-          <button class="primary" type="submit" id="add-doc-submit">Сохранить</button>
-          <div class="switch-link" id="cancel-add-doc-btn" style="margin-top:12px;">Отмена</div>
+          <button class="primary" type="submit">Сохранить</button>
         </form>
       </div>
+
+      <!-- TAB: DOCUMENTS -->
+      <div id="tab-documents" class="tab-panel hidden">
+        <div id="docs-list"></div>
+        <div id="docs-empty" class="empty hidden">Пока нет документов</div>
+        <button type="button" class="add-btn" id="show-add-doc-btn">Добавить документ</button>
+
+        <div class="form-card hidden" id="add-doc-card">
+          <div id="add-doc-msg"></div>
+          <form id="add-doc-form">
+            <label class="field-label" for="doc-photo">Фото документа</label>
+            <input type="file" id="doc-photo" accept="image/*" required>
+            <input type="text" id="doc-title" placeholder="Название, например «Анализ крови»" required>
+            <label class="field-label" for="doc-date">Дата</label>
+            <input type="date" id="doc-date">
+            <button class="primary" type="submit" id="add-doc-submit">Сохранить</button>
+            <div class="switch-link" id="cancel-add-doc-btn" style="margin-top:12px;">Отмена</div>
+          </form>
+        </div>
+      </div>
+
+      <!-- TAB: VACCINES (stub) -->
+      <div id="tab-vaccines" class="tab-panel hidden">
+        <div class="empty">Раздел «Прививки» скоро появится</div>
+      </div>
+
+      <!-- TAB: MEDICATIONS (stub) -->
+      <div id="tab-meds" class="tab-panel hidden">
+        <div class="empty">Раздел «Лекарства» скоро появится</div>
+      </div>
+
     </div>
+
+    <!-- BOTTOM TAB BAR -->
+    <nav class="tab-bar">
+      <button type="button" class="tab-btn active" data-tab="passport">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 10h2"/><path d="M16 14h2"/><path d="M6.17 15a3 3 0 0 1 5.66 0"/><circle cx="9" cy="11" r="2"/><rect x="2" y="5" width="20" height="14" rx="2"/></svg>
+        <span>Паспорт</span>
+      </button>
+      <button type="button" class="tab-btn" data-tab="documents">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+        <span>Документы</span>
+      </button>
+      <button type="button" class="tab-btn" data-tab="vaccines" disabled>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 2 4 4"/><path d="m17 7 3-3"/><path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5"/><path d="m9 11 4 4"/><path d="m5 19-3 3"/><path d="m14 4 6 6"/></svg>
+        <span>Прививки</span>
+      </button>
+      <button type="button" class="tab-btn" data-tab="meds" disabled>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
+        <span>Лекарства</span>
+      </button>
+    </nav>
   </div>
 
 </div>
@@ -283,6 +361,14 @@
 
   let accessToken = null;
   let mode = "signin";
+
+  const SPECIES_ICON = {
+    cat: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5c.67 0 1.35.09 2 .26 1.78-2 5.03-2.84 6.42-2.26 1.4.58-.42 7-.42 7 .57 1.07 1 2.24 1 3.44C21 17.9 16.97 21 12 21s-9-3-9-7.56c0-1.25.5-2.4 1-3.44 0 0-1.89-6.42-.5-7 1.39-.58 4.72.23 6.5 2.23A9.04 9.04 0 0 1 12 5Z"/><path d="M8 14v.5"/><path d="M16 14v.5"/><path d="M11.25 16.25h1.5L12 17l-.75-.75Z"/></svg>`,
+    dog: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.25 16.25h1.5L12 17z"/><path d="M16 14v.5"/><path d="M4.42 11.247A13.152 13.152 0 0 0 4 14.556C4 18.728 7.582 21 12 21s8-2.272 8-6.444a11.702 11.702 0 0 0-.493-3.309"/><path d="M8 14v.5"/><path d="M8.5 8.5c-.384 1.05-1.083 2.028-2.344 2.5-1.931.722-3.576-.297-3.656-1-.113-.994 1.177-6.53 4-7 1.923-.321 3.651.845 3.651 2.235A7.497 7.497 0 0 1 14 5.277c0-1.39 1.844-2.598 3.767-2.277 2.823.47 4.113 6.006 4 7-.08.703-1.725 1.722-3.656 1-1.261-.472-1.855-1.45-2.239-2.5"/></svg>`
+  };
+  function speciesIcon(species){
+    return SPECIES_ICON[species === "dog" ? "dog" : "cat"];
+  }
 
   const BREEDS_BY_SPECIES = {
     cat: [
@@ -483,14 +569,14 @@
       emptyMsg.classList.add("hidden");
       pets.forEach(pet => {
         const row = document.createElement("div");
-        row.className = "pet-row";
+        row.className = "card pet-row";
         const speciesLabel = pet.species === "cat" ? "Кошка" : "Собака";
         const age = pet.birth_date ? ` · ${calcAge(pet.birth_date)}` : "";
         row.innerHTML = `
-          <div class="avatar">${(pet.name || "?")[0].toUpperCase()}</div>
+          <div class="avatar">${speciesIcon(pet.species)}</div>
           <div class="pet-info">
-            <div class="pet-name">${pet.name}</div>
-            <div class="pet-meta">${speciesLabel}${age}</div>
+            <div class="card-label">${speciesLabel}${age}</div>
+            <div class="card-value pet-name">${pet.name}</div>
           </div>
           <div class="link-danger pet-delete-btn">Удалить</div>`;
         row.addEventListener("click", () => openPetDetail(pet));
@@ -585,6 +671,8 @@
     currentPetId = pet.id;
     document.getElementById("pet-detail-msg").innerHTML = "";
     document.getElementById("detail-title").textContent = pet.name || "Паспорт";
+    document.getElementById("detail-avatar").innerHTML = speciesIcon(pet.species);
+    switchTab("passport");
     document.getElementById("detail-name").value = pet.name || "";
     document.getElementById("detail-species").value = pet.species === "dog" ? "dog" : "cat";
     renderBreedOptions(document.getElementById("detail-species").value, "detail-breed");
@@ -609,6 +697,19 @@
     document.getElementById("pet-screen").classList.add("hidden");
     document.getElementById("app-screen").classList.remove("hidden");
   }
+
+  function switchTab(tab){
+    document.querySelectorAll(".tab-panel").forEach(el => el.classList.add("hidden"));
+    document.getElementById(`tab-${tab}`).classList.remove("hidden");
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.tab === tab);
+    });
+  }
+
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    if(btn.disabled) return;
+    btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+  });
 
   document.getElementById("back-btn").addEventListener("click", closePetDetail);
 
@@ -781,11 +882,11 @@
 
         docsInGroup.forEach(doc => {
           const row = document.createElement("div");
-          row.className = "doc-row";
+          row.className = "card doc-row";
           row.innerHTML = `
             <img class="doc-thumb" alt="">
             <div class="doc-info">
-              <div class="doc-name">${doc.title || "Документ"}</div>
+              <div class="card-value doc-name">${doc.title || "Документ"}</div>
             </div>
             <div class="link-danger doc-delete-btn">Удалить</div>`;
 
