@@ -116,6 +116,18 @@
   }
   .empty{text-align:center; color:var(--ink-soft); font-size:13px; padding:40px 0 20px;}
   .hidden{display:none;}
+
+  .field-label{
+    display:block;
+    font-size:12px;
+    color:var(--ink-soft);
+    margin:0 0 6px;
+  }
+  /* iOS Safari fix: input[type=date] ignores width:100% and can overflow its card */
+  input[type="date"]{
+    -webkit-min-logical-width:100%;
+    max-width:100%;
+  }
 </style>
 </head>
 <body>
@@ -153,7 +165,8 @@
             <option value="cat">Кошка</option>
             <option value="dog">Собака</option>
           </select>
-          <input type="text" id="pet-breed" placeholder="Порода (необязательно)">
+          <select id="pet-breed"></select>
+          <label class="field-label" for="pet-birth">Дата рождения</label>
           <input type="date" id="pet-birth">
           <button class="primary" type="submit">Сохранить</button>
           <div class="switch-link" id="cancel-add-btn" style="margin-top:12px;">Отмена</div>
@@ -170,6 +183,62 @@
 
   let accessToken = null;
   let mode = "signin";
+
+  const BREEDS_BY_SPECIES = {
+    cat: [
+      "Метис / не знаю породу",
+      "Британская короткошёрстная",
+      "Шотландская вислоухая",
+      "Шотландская прямоухая",
+      "Мейн-кун",
+      "Сибирская",
+      "Русская голубая",
+      "Сфинкс",
+      "Персидская",
+      "Бенгальская",
+      "Абиссинская",
+      "Сиамская",
+      "Тайская",
+      "Рэгдолл",
+      "Курильский бобтейл",
+      "Невская маскарадная",
+      "Экзотическая короткошёрстная",
+      "Другая"
+    ],
+    dog: [
+      "Дворняга / не знаю породу",
+      "Лабрадор-ретривер",
+      "Золотистый ретривер",
+      "Немецкая овчарка",
+      "Хаски",
+      "Джек-рассел-терьер",
+      "Йоркширский терьер",
+      "Чихуахуа",
+      "Такса",
+      "Шпиц",
+      "Бигль",
+      "Мопс",
+      "Французский бульдог",
+      "Той-терьер",
+      "Кавказская овчарка",
+      "Среднеазиатская овчарка",
+      "Ротвейлер",
+      "Доберман",
+      "Пудель",
+      "Другая"
+    ]
+  };
+
+  function renderBreedOptions(species){
+    const breedSelect = document.getElementById("pet-breed");
+    const breeds = BREEDS_BY_SPECIES[species] || BREEDS_BY_SPECIES.cat;
+    breedSelect.innerHTML = breeds.map(b => `<option value="${b}">${b}</option>`).join("");
+  }
+
+  document.getElementById("pet-species").addEventListener("change", (e) => {
+    renderBreedOptions(e.target.value);
+  });
+  renderBreedOptions(document.getElementById("pet-species").value);
 
   function calcAge(birthDate){
     if(!birthDate) return "";
@@ -319,6 +388,7 @@
         return;
       }
       document.getElementById("add-pet-form").reset();
+      renderBreedOptions(document.getElementById("pet-species").value);
       document.getElementById("add-form-card").classList.add("hidden");
       document.getElementById("show-add-btn").classList.remove("hidden");
       loadPets();
