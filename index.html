@@ -115,6 +115,34 @@
   .card-label{font-size:10px; color:var(--ink-soft);}
   .card-value{font-size:14px; font-weight:700; color:var(--ink); margin-top:2px;}
 
+  /* Passport tab: read-only view cards vs. editable cards */
+  .view-card, .edit-card{cursor:default;}
+  .edit-card .pet-info{width:100%;}
+  .inline-input{
+    display:block;
+    width:100%;
+    border:none;
+    padding:0;
+    margin:2px 0 0;
+    background:transparent;
+    outline:none;
+    font-size:14px;
+    font-weight:700;
+    color:var(--ink);
+    font-family:'Outfit', 'Inter', -apple-system, system-ui, sans-serif;
+  }
+  button.btn-secondary{
+    width:100%;
+    padding:13px;
+    background:var(--accent-soft);
+    color:var(--accent);
+    border:none;
+    border-radius:8px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+  }
+
   .avatar{
     width:48px; height:48px; border-radius:50%;
     background:var(--accent-soft); color:var(--accent);
@@ -126,7 +154,6 @@
   .avatar-sm svg{width:18px; height:18px;}
 
   .pet-info{flex:1; min-width:0;}
-  .pet-meta{font-size:12px; color:var(--ink-soft); margin-top:2px;}
   .link-danger{
     font-size:12px; color:var(--accent);
     text-decoration:underline; cursor:pointer; flex-shrink:0;
@@ -151,10 +178,41 @@
     color:var(--ink-soft);
     margin:0 0 6px;
   }
-  /* iOS Safari fix: input[type=date] ignores width:100% and can overflow its card. Global selector — applies to every date field in the app. */
-  input[type="date"]{
+  /*
+    iOS Safari date-input fix.
+    -webkit-min-logical-width:100% alone is not enough: Safari computes it against
+    the input's content box, so combined with the input's own padding the resulting
+    minimum width ends up LARGER than 100% of the container — and a min-width always
+    wins over a conflicting width/max-width, so the field still overflows its card.
+    Fix: strip the input's own padding/border to zero (via the .date-field wrapper)
+    so 100% logical width has nothing extra to add on top of, then let the wrapper
+    (which has normal box-sizing:border-box) supply any visible border/padding.
+  */
+  .date-field{width:100%;}
+  .date-field input[type="date"]{
+    display:block;
+    width:100%;
     -webkit-min-logical-width:100%;
     max-width:100%;
+    border:none;
+    padding:0;
+    margin:0;
+    background:transparent;
+    outline:none;
+    font-size:14px;
+    color:var(--ink);
+    font-family:inherit;
+  }
+  .date-field.boxed{
+    margin-bottom:12px;
+    padding:12px 14px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--card-bg);
+  }
+  .date-field.inline input[type="date"]{
+    font-weight:700;
+    font-family:'Outfit', 'Inter', -apple-system, system-ui, sans-serif;
   }
 
   /* Documents */
@@ -233,7 +291,7 @@
           </select>
           <select id="pet-breed"></select>
           <label class="field-label" for="pet-birth">Дата рождения</label>
-          <input type="date" id="pet-birth">
+          <div class="date-field boxed"><input type="date" id="pet-birth"></div>
           <label class="field-label" for="pet-sex">Пол</label>
           <select id="pet-sex">
             <option value="">Не указан</option>
@@ -267,37 +325,108 @@
 
       <!-- TAB: PASSPORT -->
       <div id="tab-passport" class="tab-panel">
-        <div id="pet-detail-msg"></div>
-        <form id="pet-detail-form">
-          <input type="text" id="detail-name" placeholder="Имя" required>
 
-          <select id="detail-species">
-            <option value="cat">Кошка</option>
-            <option value="dog">Собака</option>
-          </select>
+        <!-- VIEW MODE (default) -->
+        <div id="passport-view">
+          <div class="card view-card">
+            <div class="pet-info">
+              <div class="card-label">Имя</div>
+              <div class="card-value" id="view-name"></div>
+            </div>
+            <div class="switch-link" id="edit-pet-btn" style="margin:0;">Редактировать</div>
+          </div>
+          <div class="card view-card">
+            <div class="pet-info">
+              <div class="card-label">Вид</div>
+              <div class="card-value" id="view-species"></div>
+            </div>
+          </div>
+          <div class="card view-card">
+            <div class="pet-info">
+              <div class="card-label">Порода</div>
+              <div class="card-value" id="view-breed"></div>
+            </div>
+          </div>
+          <div class="card view-card">
+            <div class="pet-info">
+              <div class="card-label">Дата рождения</div>
+              <div class="card-value" id="view-birth"></div>
+              <div class="card-label" id="view-age" style="margin-top:4px;"></div>
+            </div>
+          </div>
+          <div class="card view-card">
+            <div class="pet-info">
+              <div class="card-label">Пол</div>
+              <div class="card-value" id="view-sex"></div>
+            </div>
+          </div>
+          <div class="card view-card">
+            <div class="pet-info">
+              <div class="card-label">Стерилизация</div>
+              <div class="card-value" id="view-neutered"></div>
+            </div>
+          </div>
+        </div>
 
-          <select id="detail-breed"></select>
+        <!-- EDIT MODE -->
+        <div id="passport-edit" class="hidden">
+          <div id="pet-detail-msg"></div>
+          <form id="pet-detail-form">
+            <div class="card edit-card">
+              <div class="pet-info">
+                <label class="card-label" for="detail-name">Имя</label>
+                <input type="text" id="detail-name" class="inline-input" required>
+              </div>
+            </div>
+            <div class="card edit-card">
+              <div class="pet-info">
+                <label class="card-label" for="detail-species">Вид</label>
+                <select id="detail-species" class="inline-input">
+                  <option value="cat">Кошка</option>
+                  <option value="dog">Собака</option>
+                </select>
+              </div>
+            </div>
+            <div class="card edit-card">
+              <div class="pet-info">
+                <label class="card-label" for="detail-breed">Порода</label>
+                <select id="detail-breed" class="inline-input"></select>
+              </div>
+            </div>
+            <div class="card edit-card">
+              <div class="pet-info">
+                <label class="card-label" for="detail-birth">Дата рождения</label>
+                <div class="date-field inline"><input type="date" id="detail-birth"></div>
+              </div>
+            </div>
+            <div class="card edit-card">
+              <div class="pet-info">
+                <label class="card-label" for="detail-sex">Пол</label>
+                <select id="detail-sex" class="inline-input">
+                  <option value="">Не указан</option>
+                  <option value="male">Мальчик</option>
+                  <option value="female">Девочка</option>
+                </select>
+              </div>
+            </div>
+            <div class="card edit-card">
+              <div class="pet-info">
+                <label class="card-label" for="detail-neutered">Стерилизация</label>
+                <select id="detail-neutered" class="inline-input">
+                  <option value="">Не указано</option>
+                  <option value="false">Не стерилизован(а)</option>
+                  <option value="true">Стерилизован(а)</option>
+                </select>
+              </div>
+            </div>
 
-          <label class="field-label" for="detail-birth">Дата рождения</label>
-          <input type="date" id="detail-birth">
-          <div class="pet-meta" id="detail-age" style="margin:-4px 0 12px;"></div>
+            <div style="display:flex; gap:10px; margin-top:8px;">
+              <button class="primary" type="submit" style="flex:1;">Сохранить</button>
+              <button type="button" class="btn-secondary" id="cancel-edit-btn" style="flex:1;">Отмена</button>
+            </div>
+          </form>
+        </div>
 
-          <label class="field-label" for="detail-sex">Пол</label>
-          <select id="detail-sex">
-            <option value="">Не указан</option>
-            <option value="male">Мальчик</option>
-            <option value="female">Девочка</option>
-          </select>
-
-          <label class="field-label" for="detail-neutered">Стерилизация</label>
-          <select id="detail-neutered">
-            <option value="">Не указано</option>
-            <option value="false">Не стерилизован(а)</option>
-            <option value="true">Стерилизован(а)</option>
-          </select>
-
-          <button class="primary" type="submit">Сохранить</button>
-        </form>
       </div>
 
       <!-- TAB: DOCUMENTS -->
@@ -313,7 +442,7 @@
             <input type="file" id="doc-photo" accept="image/*" required>
             <input type="text" id="doc-title" placeholder="Название, например «Анализ крови»" required>
             <label class="field-label" for="doc-date">Дата</label>
-            <input type="date" id="doc-date">
+            <div class="date-field boxed"><input type="date" id="doc-date"></div>
             <button class="primary" type="submit" id="add-doc-submit">Сохранить</button>
             <div class="switch-link" id="cancel-add-doc-btn" style="margin-top:12px;">Отмена</div>
           </form>
@@ -662,26 +791,66 @@
     }
   }
 
-  function updateDetailAge(){
-    const birth = document.getElementById("detail-birth").value;
-    document.getElementById("detail-age").textContent = birth ? `Возраст: ${calcAge(birth)}` : "";
+  function speciesLabelFull(species){
+    return species === "dog" ? "Собака" : "Кошка";
+  }
+  function sexLabel(sex){
+    return sex === "male" ? "Мальчик" : sex === "female" ? "Девочка" : "Не указан";
+  }
+  function neuteredLabel(neutered){
+    return neutered === true ? "Стерилизован(а)" : neutered === false ? "Не стерилизован(а)" : "Не указано";
+  }
+  function formatBirthDate(dateStr){
+    if(!dateStr) return "Не указана";
+    const d = new Date(`${dateStr}T00:00:00`);
+    if(isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "long", year: "numeric" });
   }
 
-  function openPetDetail(pet){
-    currentPetId = pet.id;
+  function renderPetView(pet){
+    document.getElementById("view-name").textContent = pet.name || "";
+    document.getElementById("view-species").textContent = speciesLabelFull(pet.species);
+    document.getElementById("view-breed").textContent = pet.breed || "Не указана";
+    document.getElementById("view-birth").textContent = formatBirthDate(pet.birth_date);
+    document.getElementById("view-age").textContent = pet.birth_date ? `Возраст: ${calcAge(pet.birth_date)}` : "";
+    document.getElementById("view-sex").textContent = sexLabel(pet.sex);
+    document.getElementById("view-neutered").textContent = neuteredLabel(pet.neutered);
+  }
+
+  function showPassportView(){
+    document.getElementById("passport-view").classList.remove("hidden");
+    document.getElementById("passport-edit").classList.add("hidden");
+  }
+
+  function showPassportEdit(){
+    const pet = currentPet;
     document.getElementById("pet-detail-msg").innerHTML = "";
-    document.getElementById("detail-title").textContent = pet.name || "Паспорт";
-    document.getElementById("detail-avatar").innerHTML = speciesIcon(pet.species);
-    switchTab("passport");
     document.getElementById("detail-name").value = pet.name || "";
     document.getElementById("detail-species").value = pet.species === "dog" ? "dog" : "cat";
     renderBreedOptions(document.getElementById("detail-species").value, "detail-breed");
     setSelectValueSafe(document.getElementById("detail-breed"), pet.breed);
     document.getElementById("detail-birth").value = pet.birth_date || "";
-    updateDetailAge();
     document.getElementById("detail-sex").value = pet.sex === "male" || pet.sex === "female" ? pet.sex : "";
     document.getElementById("detail-neutered").value =
       pet.neutered === true ? "true" : pet.neutered === false ? "false" : "";
+
+    document.getElementById("passport-view").classList.add("hidden");
+    document.getElementById("passport-edit").classList.remove("hidden");
+  }
+
+  document.getElementById("edit-pet-btn").addEventListener("click", showPassportEdit);
+  document.getElementById("cancel-edit-btn").addEventListener("click", showPassportView);
+
+  let currentPet = null;
+
+  function openPetDetail(pet){
+    currentPetId = pet.id;
+    currentPet = pet;
+    document.getElementById("detail-title").textContent = pet.name || "Паспорт";
+    document.getElementById("detail-avatar").innerHTML = speciesIcon(pet.species);
+    switchTab("passport");
+    renderPetView(pet);
+    showPassportView();
 
     document.getElementById("add-doc-msg").innerHTML = "";
     document.getElementById("add-doc-form").reset();
@@ -716,8 +885,6 @@
   document.getElementById("detail-species").addEventListener("change", (e) => {
     renderBreedOptions(e.target.value, "detail-breed");
   });
-
-  document.getElementById("detail-birth").addEventListener("change", updateDetailAge);
 
   document.getElementById("delete-pet-btn").addEventListener("click", async () => {
     const ok = await deletePet(currentPetId);
@@ -756,8 +923,13 @@
         msg.innerHTML = `<div class="msg-error">${data.message || "Не удалось сохранить изменения"}</div>`;
         return;
       }
-      document.getElementById("detail-title").textContent = name || "Паспорт";
-      msg.innerHTML = `<div class="msg-ok">Сохранено</div>`;
+      currentPet = Array.isArray(data) && data[0]
+        ? data[0]
+        : { ...currentPet, name, species, breed, birth_date, sex, neutered };
+      document.getElementById("detail-title").textContent = currentPet.name || "Паспорт";
+      document.getElementById("detail-avatar").innerHTML = speciesIcon(currentPet.species);
+      renderPetView(currentPet);
+      showPassportView();
       loadPets();
     } catch(err){
       msg.innerHTML = `<div class="msg-error">Не получилось связаться с сервером</div>`;
